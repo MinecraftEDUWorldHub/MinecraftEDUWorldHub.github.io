@@ -3,110 +3,90 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Minecraft World Code Manager</title>
+  <title>Public Minecraft World Codes</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f0f0f0; padding: 20px; }
-    .container { max-width: 800px; margin: 40px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    h1, h2 { text-align: center; }
-    .world-entry { background: #f9f9f9; margin-bottom: 20px; padding: 15px; border-radius: 10px; }
-    .world-code { background: #e0e0e0; padding: 10px; font-family: monospace; border-radius: 6px; white-space: pre-wrap; }
-    .login { max-width: 400px; margin: 80px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    input, button { width: 100%; padding: 10px; margin-top: 15px; border: 1px solid #ccc; border-radius: 6px; }
-    button { background: #4CAF50; color: white; cursor: pointer; }
-    button:hover { background: #45a049; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+      color: #333;
+    }
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1, h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .world-entry {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      padding: 15px;
+      background: #fafafa;
+    }
+    .world-name {
+      font-weight: bold;
+      font-size: 1.2em;
+      margin-bottom: 8px;
+    }
+    .world-code {
+      background: #eee;
+      padding: 10px;
+      border-radius: 6px;
+      font-family: monospace;
+      white-space: pre-wrap;
+      user-select: all;
+    }
   </style>
 </head>
 <body>
-<div class="login" id="login-container">
-  <h2>Admin Login</h2>
-  <input type="password" id="password" placeholder="Enter admin password" />
-  <button onclick="login()">Login</button>
-</div>
+  <div class="container">
+    <h1>Minecraft Education Edition</h1>
+    <h2>Public World Code Gallery</h2>
+    <div id="worlds-container">
+      Loading world codes...
+    </div>
+  </div>
 
-<div class="container" id="main-container" style="display:none;">
-  <h1>World Code Manager</h1>
-  <div id="worlds-container"></div>
-  <button onclick="logout()" style="margin-top:20px;">Logout</button>
-</div>
+  <script>
+    async function loadPublicWorlds() {
+      try {
+        const response = await fetch('https://codemanager.minecraftworld.workers.dev/public-worlds');
+        if (!response.ok) throw new Error('Failed to fetch world codes');
+        const data = await response.json();
 
-<script>
-  const WORKER_URL = 'https://codemanager.minecraftworld.workers.dev';
+        const container = document.getElementById('worlds-container');
+        container.innerHTML = '';
 
-  async function login() {
-    const password = document.getElementById('password').value;
-    if (!password) return alert('Enter password');
+        for (const [name, code] of Object.entries(data)) {
+          const entry = document.createElement('div');
+          entry.className = 'world-entry';
 
-    try {
-      const res = await fetch(WORKER_URL + '/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
-      });
+          const worldName = document.createElement('div');
+          worldName.className = 'world-name';
+          worldName.textContent = name;
 
-      if (!res.ok) {
-        alert('Login failed');
-        return;
+          const worldCode = document.createElement('div');
+          worldCode.className = 'world-code';
+          worldCode.textContent = code;
+
+          entry.appendChild(worldName);
+          entry.appendChild(worldCode);
+          container.appendChild(entry);
+        }
+      } catch (error) {
+        document.getElementById('worlds-container').textContent = 'Could not load world codes.';
+        console.error(error);
       }
-
-      const data = await res.json();
-      localStorage.setItem('token', data.token);
-      showMain();
-    } catch {
-      alert('Login error');
-    }
-  }
-
-  async function loadWorlds() {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
-    const res = await fetch(WORKER_URL + '/worlds', {
-      headers: { Authorization: 'Bearer ' + token }
-    });
-
-    if (!res.ok) {
-      alert('Failed to load worlds, please login again.');
-      logout();
-      return;
     }
 
-    const data = await res.json();
-    const container = document.getElementById('worlds-container');
-    container.innerHTML = '';
-
-    for (const name in data) {
-      const entry = document.createElement('div');
-      entry.className = 'world-entry';
-
-      const title = document.createElement('h3');
-      title.innerText = name;
-
-      const code = document.createElement('div');
-      code.className = 'world-code';
-      code.innerText = data[name];
-
-      entry.appendChild(title);
-      entry.appendChild(code);
-      container.appendChild(entry);
-    }
-  }
-
-  function showMain() {
-    document.getElementById('login-container').style.display = 'none';
-    document.getElementById('main-container').style.display = 'block';
-    loadWorlds();
-  }
-
-  function logout() {
-    localStorage.removeItem('token');
-    document.getElementById('login-container').style.display = 'block';
-    document.getElementById('main-container').style.display = 'none';
-  }
-
-  // On load, check if token exists
-  if (localStorage.getItem('token')) {
-    showMain();
-  }
-</script>
+    loadPublicWorlds();
+  </script>
 </body>
 </html>
